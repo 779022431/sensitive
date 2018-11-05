@@ -18,7 +18,7 @@ class Sensitive
     private $disturbList = [];
     private static $_instance = null;
 
-    public static $badWordList = null;
+    public static $badWordList = [];
 
 
     public function interference($disturbList = [])

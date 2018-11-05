@@ -1,0 +1,10 @@
+{
+  "name": "jeason/dfa-sensitive",
+  "description": "dfa敏感词",
+  "require": {},
+  "autoload": {
+    "psr-4": {
+      "Jeason\\DFA\\": "src/"
+    }
+  }
+}

@@ -167,23 +167,3 @@ class Sensitive
         return $strWord;
     }
 }
-
-function mb_substr_replace($original, $replacement, $position, $length)
-{
-    $startString = mb_substr($original, 0, $position, "UTF-8");
-    $endString = mb_substr($original, $position + $length, mb_strlen($original), "UTF-8");
-    $out = $startString . $replacement . $endString;
-    return $out;
-}
-
-//echo memory_get_usage();
-$obj = Sensitive::init();
-$obj->interference(['&', '-']);
-$obj->addWords('./sw2.txt');
-//$file = fopen('./sw2.txt', 'r');
-//while (!feof($file)) { //判断是否到最后一行
-//    $line = fgets($file); //读取一行文本
-//    $obj->addWord(trim($line));
-//}
-echo $obj->filter('士大夫网吧手&淫人逢8-必灾数阉&割网畜生吧生士大夫撒点粉淫术生畜生吧生网吧生畜生淫术炼金士');
-//echo memory_get_usage();

@@ -1,0 +1,140 @@
+import ConfigParser
+import json
+import os
+import sys
+import time
+
+from aliyunsdkcore.client import AcsClient
+from aliyunsdkcore.request import CommonRequest
+
+
+class Config:
+    cf = None
+
+    def __init__(self):
+        self.cf = ConfigParser.ConfigParser()
+        self.cf.read(os.path.split(os.path.realpath(__file__))[0] + "/config.ini")
+
+    def env(self, section, key):
+        return self.cf.get(section, key)
+
+
+def write_file(dir_path, file, data):
+    if sys.platform == "win32":
+        dir_path = dir_path + '\\'
+    else:
+        dir_path = dir_path + '/'
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    filepath = dir_path + file
+    fp = open(filepath, "a+")
+    fp.write(data + "\n")
+    fp.close()
+
+
+def bytes_to_json(bytes_):
+    data = str(bytes_, "utf-8")
+    return json.loads(data)
+
+
+def bytes_to_str(bytes_):
+    return str(bytes_, "utf-8")
+
+
+def str_split(str_):
+    return str_.split(',')
+
+
+def dict_to_str(dict_):
+    return str(dict_)
+
+
+def get_dict_value(dict_, key, value=""):
+    if key in dict_:
+        return dict_[key]
+    else:
+        return value
+
+
+def time_unix(date="", format_="%Y-%m-%d %H:%M:%S"):
+    if date == "":
+        return int(time.time())
+    else:
+        return int(time.mktime(time.strptime(date, format_)))
+
+
+def time_date(timestamp=0, format_="%Y-%m-%d %H:%M:%S"):
+    if timestamp == 0:
+        return time.strftime(format_, time.localtime())
+    else:
+        return time.strftime(format_, time.localtime(timestamp))
+
+
+class App:
+    client = None
+    dataWorksDomain = 'dataworks.aliyuncs.com'
+    dataWorksVersion = '2020-05-18'
+    rdsDomain = 'rds.aliyuncs.com'
+    rdsVersion = '2014-08-15'
+
+    def __init__(self, clientId, clientSecret, region):
+        self.client = AcsClient(clientId, clientSecret, region)
+
+    def __build_request(self, domain, version, action, param):
+        request = CommonRequest()
+        request.set_accept_format('json')
+        request.set_method('POST')
+        request.set_domain(domain)
+        request.set_version(version)
+        request.set_action_name(action)
+        request.set_query_params(param)
+        return request
+
+    def __doAction(self, request):
+        try:
+            response = self.client.do_action_with_exception(request)
+            return {"code": 0, "data": response}
+        except Exception as e:
+            return {"code": 1, "message": e.message}
+
+    def DwsListProjects(self, param=None):
+        if param is None:
+            param = {}
+        action = 'ListProjects'
+        request = self.__build_request(self.dataWorksDomain, self.dataWorksVersion, action, param)
+        return self.__doAction(request)
+
+    def DwsListAlertMessages(self, param=None):
+        if param is None:
+            param = {}
+        action = 'ListAlertMessages'
+        request = self.__build_request(self.dataWorksDomain, self.dataWorksVersion, action, param)
+        return self.__doAction(request)
+
+    def RdsDescribeDBInstances(self, param=None):
+        if param is None:
+            param = {}
+        action = 'DescribeDBInstances'
+        request = self.__build_request(self.rdsDomain, self.rdsVersion, action, param)
+        return self.__doAction(request)
+
+
+config = Config()
+clientId = config.env('app', 'clientId')
+clientSecret = config.env('app', 'clientSecret')
+region = config.env('app', 'region')
+app = App(clientId, clientSecret, region)
+page = 1
+pageSize = 10
+flag = 1
+while flag == 1:
+    ret = app.DwsListAlertMessages({'PageNumber': page, 'PageSize': pageSize, 'BeginTime': time_date(), 'EndTime': time_date()})
+    if ret['code'] == 0:
+        data = bytes_to_json(ret['data'])
+        if data['Data']['TotalCount'] < page * pageSize:
+            flag = 0
+        print(data)
+        page = page + 1
+    else:
+        flag = 0
+        print(ret['message'])
